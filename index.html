@@ -269,6 +269,13 @@ body{padding-bottom:0}
     </form>
   </section>
 
+  <!-- ================= ENCERRADO ================= -->
+  <section class="card done hidden" id="view-fechado">
+    <div class="mark" aria-hidden="true">🔒</div>
+    <h2>Confirmações encerradas</h2>
+    <p>O prazo para confirmar presença terminou em 30 de outubro. Se precisar de ajuda, fale com o RH.</p>
+  </section>
+
   <!-- ================= SUCESSO ================= -->
   <section class="card done hidden" id="view-done">
     <div class="mark" aria-hidden="true">🎉</div>
@@ -330,7 +337,9 @@ const EVENTO = {
   data:    "Sábado, 12 de dezembro",          // ex.: "Sábado, 12 de dezembro"
   horario: "Das 13h às 20h",          // ex.: "A partir das 19h"
   local:   "Chácara Oasis",          // ex.: "Sítio X, Itaúna"
-  prazo:   "Confirme sua presença o quanto antes",   // ex.: "Confirme até 5 de dezembro"
+  prazo:   "Confirme até 30 de outubro",
+  // Depois deste momento o formulário fecha (horário de Brasília)
+  encerraEm: "2026-10-31T00:00:00-03:00",
   // Frase que aparece depois que a pessoa confirma presença
   fraseFinal: "Sua presença torna essa comemoração ainda mais especial. Esperamos você e sua família!"
 };
@@ -367,6 +376,8 @@ $("ev-hora").textContent = EVENTO.horario;
 $("ev-local").textContent = EVENTO.local;
 $("ev-prazo").textContent = EVENTO.prazo;
 document.title = EVENTO.titulo + " · Confirmação de presença";
+
+const ENCERRADO = Date.now() >= new Date(EVENTO.encerraEm).getTime();
 
 let db = null;
 if (firebaseConfig.projectId) {
@@ -447,6 +458,7 @@ $("rsvp").addEventListener("submit", async (e) => {
     }
   }
 
+  if (Date.now() >= new Date(EVENTO.encerraEm).getTime()) return erro("O prazo para confirmar terminou em 30 de outubro.");
   if (!db) return erro("O formulário ainda não está ligado ao banco de dados. Avise o RH.");
   $("btn-enviar").disabled = true;
   $("btn-enviar").textContent = "Enviando…";
@@ -486,7 +498,7 @@ $("btn-alterar").onclick = () => { show($("view-done"), false); show($("view-for
 // Se a pessoa já respondeu neste celular, carrega a resposta para facilitar a alteração
 (async () => {
   let nome = ""; try { nome = localStorage.getItem("rsvp-nome") || ""; } catch {}
-  if (!nome || !db || location.hash === "#painel") return;
+  if (!nome || !db || ENCERRADO || location.hash === "#painel") return;
   try {
     const snap = await getDoc(doc(db, COL, slug(nome)));
     if (!snap.exists()) return;
@@ -578,6 +590,10 @@ $("btn-csv").onclick = () => {
 };
 
 if (location.hash === "#painel") abrirPainel();
+else if (ENCERRADO) {
+  show($("view-form"), false); show($("view-done"), false); show($("view-fechado"), true);
+  $("ev-prazo").textContent = "Confirmações encerradas";
+}
 window.addEventListener("hashchange", () => location.reload());
 </script>
 </body>
