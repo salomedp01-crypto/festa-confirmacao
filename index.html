@@ -1,0 +1,584 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Festa de fim de ano</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,800&family=Nunito+Sans:opsz,wght@6..12,400;6..12,600;6..12,700&display=swap" rel="stylesheet">
+<style>
+/* =========================================================
+   CORES (identidade Agás: azul #1B3FA0, marinho #10245E, vermelho #E2231A)
+   ========================================================= */
+:root{
+  --bg:#f2f4f8; --surface:#ffffff; --ink:#10245e; --muted:#5a6683;
+  --line:#d9deea; --field:#f6f8fc;
+  --brand:#1b3fa0; --navy:#10245e; --red:#e2231a; --gold:#f2b632; --gold-soft:#ffe9a8;
+  --ok:#1d7a52; --ok-soft:#e1f3ea; --no:#c4261d; --no-soft:#fde0df;
+  --btn:#1b3fa0; --btn-ink:#ffffff;
+  color-scheme:light;
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --bg:#08112a; --surface:#111d3f; --ink:#eef2fb; --muted:#a8b3cf;
+    --line:#26365f; --field:#0c1734;
+    --ok:#62d4a0; --ok-soft:#14372a; --no:#ff8a80; --no-soft:#43191a;
+    --btn:#3f66d6; --btn-ink:#ffffff; --gold-soft:#4a3a12;
+    color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#08112a; --surface:#111d3f; --ink:#eef2fb; --muted:#a8b3cf;
+  --line:#26365f; --field:#0c1734;
+  --ok:#62d4a0; --ok-soft:#14372a; --no:#ff8a80; --no-soft:#43191a;
+  --btn:#3f66d6; --btn-ink:#ffffff; --gold-soft:#4a3a12;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{
+  margin:0;background:var(--bg);color:var(--ink);
+  font:400 1.0625rem/1.55 "Nunito Sans",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  padding-bottom:env(safe-area-inset-bottom,0px);
+}
+.wrap{position:relative;max-width:580px;margin:-3.2rem auto 0;padding:0 1.1rem 2.5rem}
+
+/* ---------- topo ---------- */
+.hero{
+  position:relative;overflow:hidden;color:#fff;
+  background:
+    radial-gradient(120% 80% at 85% 0%, #2b55c9 0%, transparent 60%),
+    linear-gradient(170deg, var(--brand) 0%, var(--navy) 70%);
+  padding:calc(env(safe-area-inset-top,0px) + 1.4rem) 0 5rem;
+}
+.hero::before{content:"";position:absolute;inset:0 0 auto;height:6px;background:var(--red)}
+.hero-in{position:relative;max-width:580px;margin:0 auto;padding:0 1.1rem}
+.confetti{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
+@media (max-width:600px){.confetti{opacity:.4}}
+
+.logos{
+  display:inline-flex;align-items:center;gap:1rem;background:#fff;border-radius:14px;
+  padding:.6rem 1rem;margin-bottom:2rem;box-shadow:0 6px 20px rgba(5,15,50,.25);
+}
+.logos img{height:46px;width:auto;max-width:140px;object-fit:contain;display:block}
+.logos .sep{width:1px;align-self:stretch;background:#d9deea}
+.logos .fallback{font-family:"Bricolage Grotesque",Georgia,serif;font-weight:800;color:#10245e;font-size:1.25rem}
+.logos .fallback.eu{color:#e2231a}
+
+.ano{font-family:"Bricolage Grotesque",Georgia,serif;font-weight:800;font-size:1rem;
+  color:var(--gold);margin:0 0 .3rem;letter-spacing:.02em}
+.hero h1{
+  margin:0;font-family:"Bricolage Grotesque",Georgia,serif;font-weight:800;
+  font-size:clamp(2.7rem,12vw,4rem);line-height:.92;letter-spacing:-.025em;
+}
+.hero .sub{margin:1rem 0 0;color:#cfdaf7;font-size:1.05rem;max-width:30rem}
+.facts{margin:1.6rem 0 0;padding:0;list-style:none;display:grid;grid-template-columns:repeat(3,1fr);
+  border-top:1px solid rgba(255,255,255,.18);border-bottom:1px solid rgba(255,255,255,.18)}
+.facts li{padding:.85rem .6rem .85rem 0}
+.facts li + li{padding-left:.8rem;border-left:1px solid rgba(255,255,255,.18)}
+.facts .k{display:block;color:#a9bbec;font-size:.85rem}
+.facts .v{display:block;font-weight:700;line-height:1.3}
+.deadline{display:inline-block;margin-top:1.2rem;background:var(--gold);color:#10245e;
+  padding:.45rem .85rem;border-radius:999px;font-size:.95rem;font-weight:700}
+@media (max-width:420px){
+  .facts{grid-template-columns:1fr}
+  .facts li,.facts li + li{padding:.6rem 0;border-left:0}
+  .facts li + li{border-top:1px solid rgba(255,255,255,.18)}
+  .facts li{display:flex;gap:.8rem;align-items:baseline}
+  .facts .k{flex:0 0 4.5rem}
+}
+
+/* ---------- cartão ---------- */
+.card{position:relative;background:var(--surface);border-radius:20px;padding:1.6rem 1.3rem;
+  box-shadow:0 18px 40px -18px rgba(16,36,94,.35);border:1px solid var(--line)}
+.card h2{font-family:"Bricolage Grotesque",Georgia,serif;font-weight:800;font-size:1.5rem;margin:0 0 1.3rem;line-height:1.15}
+.card h2::after{content:"";display:block;width:2.4rem;height:4px;border-radius:2px;background:var(--red);margin-top:.55rem}
+.done h2::after{margin-left:auto;margin-right:auto}
+.q{margin:0 0 1.5rem}
+.q > label,.q > .lbl{display:block;font-weight:700;margin-bottom:.5rem}
+.hint{color:var(--muted);font-size:.92rem;margin:-.3rem 0 .6rem}
+input[type=text],input[type=number]{
+  width:100%;font:inherit;color:var(--ink);background:var(--field);
+  border:1.5px solid var(--line);border-radius:12px;padding:.8rem .9rem;transition:border-color .15s;
+}
+input[type=text]:focus,input[type=number]:focus{border-color:var(--brand)}
+input:focus-visible,button:focus-visible{outline:3px solid var(--gold);outline-offset:2px}
+
+.choice{display:grid;grid-template-columns:1fr 1fr;gap:.6rem}
+.choice input{position:absolute;opacity:0;pointer-events:none}
+.choice label{
+  display:block;text-align:center;padding:.85rem .5rem;border-radius:12px;cursor:pointer;
+  border:1.5px solid var(--line);background:var(--field);font-weight:700;transition:background .15s,border-color .15s;
+}
+.choice input:focus-visible + label{outline:3px solid var(--gold);outline-offset:2px}
+.choice input[value="sim"]:checked + label{border-color:var(--ok);background:var(--ok-soft);color:var(--ok)}
+.choice input[value="nao"]:checked + label{border-color:var(--no);background:var(--no-soft);color:var(--no)}
+
+.sub-block{border-left:3px solid var(--brand);padding-left:1rem;margin-top:.9rem}
+.hidden{display:none !important}
+
+.kid{display:grid;grid-template-columns:1fr 6rem 2.8rem;gap:.5rem;margin-bottom:.5rem;align-items:center}
+.kid button{height:3rem;border-radius:12px;border:1.5px solid var(--line);background:transparent;color:var(--muted);font-size:1.3rem;cursor:pointer}
+.add{border:1.5px dashed var(--brand);background:transparent;color:var(--brand);font:inherit;font-weight:700;
+  padding:.7rem 1rem;border-radius:12px;cursor:pointer;width:100%}
+@media (prefers-color-scheme:dark){ :root:not([data-theme="light"]) .add{color:var(--ink);border-color:var(--line)} }
+
+.primary{
+  width:100%;font:inherit;font-weight:800;font-size:1.1rem;border:0;border-radius:14px;cursor:pointer;
+  padding:1.05rem;background:var(--btn);color:var(--btn-ink);
+  box-shadow:0 8px 18px -8px rgba(27,63,160,.7);
+}
+.primary:active{transform:translateY(1px)}
+.primary[disabled]{opacity:.55;cursor:wait}
+.error{color:var(--no);font-weight:700;margin:.2rem 0 1rem}
+
+.done{text-align:center}
+.done .mark{font-size:3.2rem;line-height:1;margin-bottom:.6rem}
+@media (prefers-reduced-motion:no-preference){
+  .done:not(.hidden) .mark{animation:pop .5s cubic-bezier(.3,1.6,.5,1)}
+  @keyframes pop{from{transform:scale(.3);opacity:0}}
+}
+.done ul{list-style:none;margin:1rem 0 1.4rem;text-align:left;background:var(--field);border-radius:14px;padding:1rem 1.1rem}
+.done li{margin:.2rem 0}
+.frase{font-family:"Bricolage Grotesque",Georgia,serif;font-weight:500;font-size:1.25rem;line-height:1.35;
+  margin:0 auto 1.2rem;max-width:26rem;color:var(--ink)}
+.frase::before{content:"";display:block;width:2.4rem;height:4px;border-radius:2px;background:var(--gold);margin:0 auto .9rem}
+.link{background:none;border:0;color:var(--ink);font:inherit;font-weight:700;text-decoration:underline;cursor:pointer;padding:.4rem}
+
+.stats{display:grid;grid-template-columns:repeat(2,1fr);gap:.6rem;margin-bottom:1.2rem}
+.stat{background:var(--field);border-radius:14px;padding:.9rem}
+.stat b{display:block;font-family:"Bricolage Grotesque",Georgia,serif;font-size:2.1rem;line-height:1}
+.stat span{color:var(--muted);font-size:.9rem}
+.stat.total{grid-column:1/-1;background:var(--navy);color:#fff}
+.stat.total span{color:#c3cff2}
+.toolbar{display:flex;gap:.5rem;margin-bottom:.9rem;flex-wrap:wrap}
+.toolbar input{flex:1 1 12rem}
+.ghost{font:inherit;font-weight:700;border:1.5px solid var(--line);background:transparent;color:var(--ink);
+  border-radius:12px;padding:.6rem .9rem;cursor:pointer}
+.ghost.on{background:var(--brand);color:#fff;border-color:var(--brand)}
+.table-wrap{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:.95rem}
+th,td{text-align:left;padding:.6rem .4rem;border-bottom:1px solid var(--line);vertical-align:top}
+th{color:var(--muted);font-weight:600}
+.tag{display:inline-block;font-weight:700;font-size:.85rem;padding:.1rem .5rem;border-radius:6px}
+.tag.sim{background:var(--ok-soft);color:var(--ok)}
+.tag.nao{background:var(--no-soft);color:var(--no)}
+.small{color:var(--muted);font-size:.88rem}
+.notice{margin-bottom:1rem;background:var(--no-soft);color:var(--no);border-radius:14px;padding:1rem;font-weight:600}
+
+footer{margin-top:2.5rem;background:var(--navy);color:#c3cff2;text-align:center;font-size:.85rem;
+  padding:1.3rem 1rem calc(1.3rem + env(safe-area-inset-bottom,0px));border-top:4px solid var(--red)}
+footer b{color:#fff}
+body{padding-bottom:0}
+@media (prefers-reduced-motion:no-preference){
+  .confetti .c{animation:drift 7s ease-in-out infinite alternate}
+  .confetti .c:nth-child(3n){animation-duration:9s}
+  @keyframes drift{to{transform:translateY(8px) rotate(8deg)}}
+}
+</style>
+</head>
+<body>
+<script>function logoCheck(){var l=document.getElementById("logos");if(l&&!l.querySelector("img"))l.remove();else if(l&&l.querySelectorAll("img").length<2){var s=l.querySelector(".sep");if(s)s.remove();}}</script>
+<header class="hero">
+  <svg class="confetti" viewBox="0 0 600 360" preserveAspectRatio="xMaxYMin slice" aria-hidden="true">
+    <g fill="#f2b632">
+      <circle class="c" cx="520" cy="60" r="6"/><circle class="c" cx="575" cy="150" r="4"/>
+      <rect class="c" x="470" y="110" width="12" height="5" rx="2.5" transform="rotate(30 476 112)"/>
+      <rect class="c" x="545" y="235" width="14" height="5" rx="2.5" transform="rotate(-25 552 237)"/>
+      <circle class="c" cx="40" cy="300" r="4"/>
+    </g>
+    <g fill="#e2231a">
+      <circle class="c" cx="455" cy="40" r="4"/><circle class="c" cx="590" cy="290" r="5"/>
+      <rect class="c" x="505" y="190" width="12" height="5" rx="2.5" transform="rotate(55 511 192)"/>
+    </g>
+    <g fill="#ffffff" opacity=".35">
+      <circle class="c" cx="560" cy="25" r="5"/><circle class="c" cx="420" cy="170" r="3"/>
+      <circle class="c" cx="15" cy="340" r="6"/><rect class="c" x="430" y="285" width="12" height="5" rx="2.5" transform="rotate(20 436 287)"/>
+    </g>
+  </svg>
+  <div class="hero-in">
+    <div class="logos" id="logos">
+      <img src="logo-agas.png" alt="" onerror="this.remove();logoCheck()">
+      <span class="sep" aria-hidden="true"></span>
+      <img src="logo-eugas.png" alt="" onerror="this.remove();logoCheck()">
+    </div>
+    <p class="ano">Confraternização 2026</p>
+    <h1 id="ev-titulo">Festa de fim de ano</h1>
+    <p class="sub" id="ev-sub"></p>
+    <ul class="facts">
+      <li><span class="k">Quando</span><span class="v" id="ev-data"></span></li>
+      <li><span class="k">Horário</span><span class="v" id="ev-hora"></span></li>
+      <li><span class="k">Onde</span><span class="v" id="ev-local"></span></li>
+    </ul>
+    <span class="deadline" id="ev-prazo"></span>
+  </div>
+</header>
+
+<div class="wrap">
+<div id="cfg-notice" class="notice hidden">
+    Falta configurar o Firebase: preencha o bloco <code>firebaseConfig</code> no código antes de divulgar o link.
+  </div>
+
+  <!-- ================= FORMULÁRIO ================= -->
+  <section class="card" id="view-form">
+    <h2>Confirme sua presença</h2>
+    <form id="rsvp" novalidate>
+      <div class="q">
+        <label for="nome">Seu nome completo</label>
+        <input type="text" id="nome" autocomplete="name" maxlength="100" required>
+      </div>
+
+      <div class="q">
+        <span class="lbl" id="lbl-vai">Você vai à festa?</span>
+        <div class="choice" role="radiogroup" aria-labelledby="lbl-vai">
+          <input type="radio" name="vai" id="vai-s" value="sim"><label for="vai-s">Sim, vou</label>
+          <input type="radio" name="vai" id="vai-n" value="nao"><label for="vai-n">Não vou</label>
+        </div>
+      </div>
+
+      <div id="bloco-acomp" class="hidden">
+        <div class="q">
+          <span class="lbl" id="lbl-conj">Vai levar cônjuge ou namorado(a)?</span>
+          <div class="choice" role="radiogroup" aria-labelledby="lbl-conj">
+            <input type="radio" name="conj" id="conj-s" value="sim"><label for="conj-s">Sim</label>
+            <input type="radio" name="conj" id="conj-n" value="nao"><label for="conj-n">Não</label>
+          </div>
+          <div class="sub-block hidden" id="bloco-conj">
+            <label for="conj-nome" class="lbl" style="font-weight:700;display:block;margin-bottom:.5rem">Nome do(a) acompanhante</label>
+            <input type="text" id="conj-nome" maxlength="100">
+          </div>
+        </div>
+
+        <div class="q">
+          <span class="lbl" id="lbl-filhos">Vai levar filhos de até 18 anos?</span>
+          <div class="choice" role="radiogroup" aria-labelledby="lbl-filhos">
+            <input type="radio" name="filhos" id="fil-s" value="sim"><label for="fil-s">Sim</label>
+            <input type="radio" name="filhos" id="fil-n" value="nao"><label for="fil-n">Não</label>
+          </div>
+          <div class="sub-block hidden" id="bloco-filhos">
+            <p class="hint">Nome e idade de cada filho.</p>
+            <div id="kids"></div>
+            <button type="button" class="add" id="add-kid">+ Adicionar filho</button>
+          </div>
+        </div>
+      </div>
+
+      <p class="error hidden" id="erro" role="alert"></p>
+      <button class="primary" type="submit" id="btn-enviar">Enviar confirmação</button>
+    </form>
+  </section>
+
+  <!-- ================= SUCESSO ================= -->
+  <section class="card done hidden" id="view-done">
+    <div class="mark" aria-hidden="true">🎉</div>
+    <h2 id="done-titulo">Confirmação enviada</h2>
+    <p id="done-texto"></p>
+    <ul id="done-resumo"></ul>
+    <p class="frase hidden" id="done-frase"></p>
+    <button class="link" id="btn-alterar">Alterar minha resposta</button>
+  </section>
+
+  <!-- ================= PAINEL (link + #painel) ================= -->
+  <section class="card hidden" id="view-login">
+    <h2>Painel de confirmações</h2>
+    <div class="q">
+      <label for="pin">Senha do painel</label>
+      <input type="text" id="pin" inputmode="numeric" autocomplete="off">
+    </div>
+    <p class="error hidden" id="pin-erro" role="alert">Senha incorreta.</p>
+    <button class="primary" id="btn-pin">Entrar</button>
+  </section>
+
+  <section class="card hidden" id="view-painel">
+    <h2>Confirmações</h2>
+    <div class="stats">
+      <div class="stat"><b id="s-func">0</b><span>funcionários confirmados</span></div>
+      <div class="stat"><b id="s-conj">0</b><span>cônjuges / namorados(as)</span></div>
+      <div class="stat"><b id="s-filhos">0</b><span>filhos (até 18 anos)</span></div>
+      <div class="stat"><b id="s-nao">0</b><span>não vão</span></div>
+      <div class="stat total"><b id="s-total">0</b><span>pessoas no total (funcionários + acompanhantes + filhos)</span></div>
+    </div>
+    <div class="toolbar">
+      <input type="text" id="busca" placeholder="Buscar nome">
+      <button class="ghost on" data-f="todos">Todos</button>
+      <button class="ghost" data-f="sim">Vão</button>
+      <button class="ghost" data-f="nao">Não vão</button>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Nome</th><th>Vai?</th><th>Acompanhantes</th></tr></thead>
+        <tbody id="lista"></tbody>
+      </table>
+    </div>
+    <p class="small" id="vazio" style="text-align:center;margin-top:1rem">Ainda não chegou nenhuma resposta. Mande o link no grupo para começar.</p>
+    <div class="toolbar" style="margin-top:1.2rem">
+      <button class="ghost" id="btn-csv">Baixar planilha (CSV)</button>
+    </div>
+  </section>
+
+</div>
+
+
+<script type="module">
+/* =========================================================
+   1) DADOS DA FESTA — edite aqui
+   ========================================================= */
+const EVENTO = {
+  titulo:  "Festa de fim de ano",
+  subtitulo: "Vamos comemorar o ano com toda a equipe e as famílias.",
+  data:    "Sábado, 12 de dezembro",          // ex.: "Sábado, 12 de dezembro"
+  horario: "Das 13h às 20h",          // ex.: "A partir das 19h"
+  local:   "Chácara Oasis",          // ex.: "Sítio X, Itaúna"
+  prazo:   "Confirme sua presença o quanto antes",   // ex.: "Confirme até 5 de dezembro"
+  // Frase que aparece depois que a pessoa confirma presença
+  fraseFinal: "Sua presença torna essa comemoração ainda mais especial. Esperamos você e sua família!"
+};
+
+/* Senha simples para abrir o painel (link + #painel) */
+const PIN_PAINEL = "2026";
+
+/* =========================================================
+   2) FIREBASE — cole a configuração do seu projeto
+   (Console do Firebase > Configurações do projeto > Seus apps > Web)
+   ========================================================= */
+const firebaseConfig = {
+  apiKey: "AIzaSyCf776VoACHipOcqKUUIMga_mc1UJR1_4o",
+  authDomain: "festa-fim-ano.firebaseapp.com",
+  projectId: "festa-fim-ano",
+  storageBucket: "festa-fim-ano.firebasestorage.app",
+  messagingSenderId: "639686222586",
+  appId: "1:639686222586:web:9a6633ff9a7085d1971f43"
+};
+
+/* ========================================================= */
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import { getFirestore, doc, setDoc, getDoc, collection, onSnapshot, serverTimestamp }
+  from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+const $ = (id) => document.getElementById(id);
+const COL = "confirmacoes";
+
+// Preenche o topo
+$("ev-titulo").textContent = EVENTO.titulo;
+$("ev-sub").textContent = EVENTO.subtitulo;
+$("ev-data").textContent = EVENTO.data;
+$("ev-hora").textContent = EVENTO.horario;
+$("ev-local").textContent = EVENTO.local;
+$("ev-prazo").textContent = EVENTO.prazo;
+document.title = EVENTO.titulo + " · Confirmação de presença";
+
+let db = null;
+if (firebaseConfig.projectId) {
+  db = getFirestore(initializeApp(firebaseConfig));
+} else {
+  $("cfg-notice").classList.remove("hidden");
+}
+
+/* ---------- utilidades ---------- */
+const slug = (s) => s.normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+  .toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 80);
+const radio = (name) => (document.querySelector(`input[name="${name}"]:checked`) || {}).value || "";
+const show = (el, on) => el.classList.toggle("hidden", !on);
+function setRadio(name, value){
+  const r = document.querySelector(`input[name="${name}"][value="${value}"]`);
+  if (r) r.checked = true;
+}
+
+/* ---------- formulário ---------- */
+function syncForm(){
+  const vai = radio("vai") === "sim";
+  show($("bloco-acomp"), vai);
+  show($("bloco-conj"), vai && radio("conj") === "sim");
+  const temFilhos = vai && radio("filhos") === "sim";
+  show($("bloco-filhos"), temFilhos);
+  if (temFilhos && !$("kids").children.length) addKid();
+}
+document.querySelectorAll("#rsvp input[type=radio]").forEach(r => r.addEventListener("change", syncForm));
+
+function addKid(nome = "", idade = ""){
+  const row = document.createElement("div");
+  row.className = "kid";
+  row.innerHTML = `
+    <input type="text" placeholder="Nome" maxlength="80" aria-label="Nome do filho">
+    <input type="number" placeholder="Idade" min="0" max="18" inputmode="numeric" aria-label="Idade">
+    <button type="button" aria-label="Remover">×</button>`;
+  row.children[0].value = nome;
+  row.children[1].value = idade;
+  row.children[2].onclick = () => {
+    row.remove();
+    if (!$("kids").children.length) { setRadio("filhos", "nao"); syncForm(); }
+  };
+  $("kids").appendChild(row);
+}
+$("add-kid").onclick = () => addKid();
+
+function erro(msg){ $("erro").textContent = msg; show($("erro"), !!msg); }
+
+$("rsvp").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  erro("");
+  const nome = $("nome").value.trim().replace(/\s+/g, " ");
+  const vai = radio("vai");
+  if (nome.split(" ").length < 2) return erro("Escreva seu nome e sobrenome.");
+  if (!vai) return erro("Responda se você vai à festa.");
+
+  const dados = { nome, vai, conjuge: "", filhos: [], atualizadoEm: serverTimestamp() };
+
+  if (vai === "sim") {
+    const conj = radio("conj"), fil = radio("filhos");
+    if (!conj) return erro("Responda se vai levar cônjuge ou namorado(a).");
+    if (!fil) return erro("Responda se vai levar filhos de até 18 anos.");
+    if (conj === "sim") {
+      dados.conjuge = $("conj-nome").value.trim();
+      if (!dados.conjuge) return erro("Escreva o nome do(a) acompanhante.");
+    }
+    if (fil === "sim") {
+      for (const row of $("kids").children) {
+        const n = row.children[0].value.trim();
+        const i = row.children[1].value;
+        if (!n && i === "") continue;
+        const idade = Number(i);
+        if (!n || i === "" || !Number.isInteger(idade) || idade < 0 || idade > 18)
+          return erro("Preencha nome e idade de cada filho (até 18 anos).");
+        dados.filhos.push({ nome: n, idade });
+      }
+      if (!dados.filhos.length) return erro("Adicione pelo menos um filho ou marque “Não”.");
+    }
+  }
+
+  if (!db) return erro("O formulário ainda não está ligado ao banco de dados. Avise o RH.");
+  $("btn-enviar").disabled = true;
+  $("btn-enviar").textContent = "Enviando…";
+  try {
+    await setDoc(doc(db, COL, slug(nome)), dados);
+    try { localStorage.setItem("rsvp-nome", nome); } catch {}
+    mostrarSucesso(dados);
+  } catch (err) {
+    console.error(err);
+    erro("Não foi possível enviar. Verifique a internet e tente de novo.");
+  } finally {
+    $("btn-enviar").disabled = false;
+    $("btn-enviar").textContent = "Enviar confirmação";
+  }
+});
+
+function mostrarSucesso(d){
+  show($("view-form"), false); show($("view-done"), true);
+  const vai = d.vai === "sim";
+  $("done-titulo").textContent = vai ? "Presença confirmada" : "Resposta registrada";
+  $("done-texto").textContent = vai
+    ? `Obrigado, ${d.nome.split(" ")[0]}! Até a festa.`
+    : `Obrigado por avisar, ${d.nome.split(" ")[0]}. Se mudar de ideia, é só alterar sua resposta.`;
+  const ul = $("done-resumo"); ul.innerHTML = "";
+  const add = (t) => { const li = document.createElement("li"); li.textContent = t; ul.appendChild(li); };
+  add(`${d.nome}: ${vai ? "vai" : "não vai"}`);
+  if (d.conjuge) add(`Acompanhante: ${d.conjuge}`);
+  d.filhos.forEach(f => add(`Filho(a): ${f.nome}, ${f.idade} ${f.idade === 1 ? "ano" : "anos"}`));
+  show(ul, true);
+  $("done-frase").textContent = EVENTO.fraseFinal || "";
+  show($("done-frase"), vai && !!EVENTO.fraseFinal);
+  window.scrollTo({ top: 0 });
+}
+
+$("btn-alterar").onclick = () => { show($("view-done"), false); show($("view-form"), true); };
+
+// Se a pessoa já respondeu neste celular, carrega a resposta para facilitar a alteração
+(async () => {
+  let nome = ""; try { nome = localStorage.getItem("rsvp-nome") || ""; } catch {}
+  if (!nome || !db || location.hash === "#painel") return;
+  try {
+    const snap = await getDoc(doc(db, COL, slug(nome)));
+    if (!snap.exists()) return;
+    const d = snap.data();
+    $("nome").value = d.nome;
+    setRadio("vai", d.vai);
+    if (d.vai === "sim") {
+      setRadio("conj", d.conjuge ? "sim" : "nao");
+      $("conj-nome").value = d.conjuge || "";
+      setRadio("filhos", d.filhos?.length ? "sim" : "nao");
+      (d.filhos || []).forEach(f => addKid(f.nome, f.idade));
+    }
+    syncForm();
+    mostrarSucesso(d);
+  } catch {}
+})();
+
+/* ---------- painel ---------- */
+let todos = [], filtro = "todos";
+
+function abrirPainel(){
+  show($("view-form"), false); show($("view-done"), false);
+  show($("view-login"), true);
+}
+$("btn-pin").onclick = () => {
+  if ($("pin").value.trim() !== PIN_PAINEL) return show($("pin-erro"), true);
+  show($("view-login"), false); show($("view-painel"), true);
+  if (!db) return;
+  onSnapshot(collection(db, COL), (snap) => {
+    todos = snap.docs.map(d => d.data()).sort((a, b) => a.nome.localeCompare(b.nome, "pt-BR"));
+    render();
+  });
+};
+$("pin").addEventListener("keydown", e => { if (e.key === "Enter") $("btn-pin").click(); });
+
+function render(){
+  const sim = todos.filter(d => d.vai === "sim");
+  const conj = sim.filter(d => d.conjuge).length;
+  const filhos = sim.reduce((n, d) => n + (d.filhos?.length || 0), 0);
+  $("s-func").textContent = sim.length;
+  $("s-conj").textContent = conj;
+  $("s-filhos").textContent = filhos;
+  $("s-nao").textContent = todos.length - sim.length;
+  $("s-total").textContent = sim.length + conj + filhos;
+
+  const q = slug($("busca").value);
+  const lista = todos.filter(d => (filtro === "todos" || d.vai === filtro) && (!q || slug(d.nome).includes(q)));
+  const tb = $("lista"); tb.innerHTML = "";
+  lista.forEach(d => {
+    const tr = document.createElement("tr");
+    const tdN = document.createElement("td"); tdN.textContent = d.nome;
+    const tdV = document.createElement("td");
+    const tag = document.createElement("span");
+    tag.className = "tag " + d.vai; tag.textContent = d.vai === "sim" ? "Vai" : "Não vai";
+    tdV.appendChild(tag);
+    const tdA = document.createElement("td");
+    const partes = [];
+    if (d.conjuge) partes.push(`Cônjuge/namorado(a): ${d.conjuge}`);
+    (d.filhos || []).forEach(f => partes.push(`Filho(a): ${f.nome} (${f.idade})`));
+    tdA.textContent = partes.join(" · ") || "—";
+    if (!partes.length) tdA.className = "small";
+    tr.append(tdN, tdV, tdA); tb.appendChild(tr);
+  });
+  show($("vazio"), !todos.length);
+}
+$("busca").addEventListener("input", render);
+document.querySelectorAll("[data-f]").forEach(b => b.onclick = () => {
+  filtro = b.dataset.f;
+  document.querySelectorAll("[data-f]").forEach(x => x.classList.toggle("on", x === b));
+  render();
+});
+
+$("btn-csv").onclick = () => {
+  const linhas = [["Nome","Vai","Cônjuge/namorado(a)","Qtd filhos","Filhos (nome e idade)","Total de pessoas"]];
+  todos.forEach(d => {
+    const vai = d.vai === "sim";
+    const nf = d.filhos?.length || 0;
+    linhas.push([
+      d.nome, vai ? "Sim" : "Não", d.conjuge || "", nf,
+      (d.filhos || []).map(f => `${f.nome} (${f.idade})`).join("; "),
+      vai ? 1 + (d.conjuge ? 1 : 0) + nf : 0
+    ]);
+  });
+  const csv = "\uFEFF" + linhas.map(l => l.map(c => `"${String(c).replace(/"/g, '""')}"`).join(";")).join("\r\n");
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(new Blob([csv], { type: "text/csv;charset=utf-8" }));
+  a.download = "confirmacoes-festa.csv";
+  a.click();
+};
+
+if (location.hash === "#painel") abrirPainel();
+window.addEventListener("hashchange", () => location.reload());
+</script>
+</body>
+</html>
