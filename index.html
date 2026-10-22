@@ -313,16 +313,11 @@ body{padding-bottom:0}
   <!-- ================= PAINEL (link + #painel) ================= -->
   <section class="card hidden" id="view-login">
     <h2>Painel de confirmações</h2>
-    <p class="hint" style="margin:0 0 1rem">Entre com o e-mail e a senha cadastrados no Firebase.</p>
-    <div class="q">
-      <label for="adm-email">E-mail</label>
-      <input type="text" id="adm-email" inputmode="email" autocomplete="username">
-    </div>
     <div class="q">
       <label for="adm-senha">Senha</label>
       <input type="password" id="adm-senha" autocomplete="current-password" style="width:100%;font:inherit;color:var(--ink);background:var(--field);border:1.5px solid var(--line);border-radius:12px;padding:.8rem .9rem">
     </div>
-    <p class="error hidden" id="pin-erro" role="alert">E-mail ou senha incorretos.</p>
+    <p class="error hidden" id="pin-erro" role="alert">Senha incorreta.</p>
     <button class="primary" id="btn-pin">Entrar</button>
   </section>
 
@@ -375,7 +370,8 @@ const EVENTO = {
   fraseFinal: "Sua presença torna essa comemoração ainda mais especial. Esperamos você e sua família!"
 };
 
-/* O painel (link + #painel) usa login do Firebase Authentication */
+/* Senha do painel (link + #painel) */
+const SENHA_PAINEL = "2026";
 
 /* =========================================================
    2) FIREBASE — cole a configuração do seu projeto
@@ -392,8 +388,6 @@ const firebaseConfig = {
 
 /* ========================================================= */
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut }
-  from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 import { getFirestore, doc, setDoc, getDoc, updateDoc, collection, onSnapshot, serverTimestamp, arrayUnion, arrayRemove }
   from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
@@ -411,11 +405,11 @@ document.title = EVENTO.titulo + " · Confirmação de presença";
 
 const ENCERRADO = Date.now() >= new Date(EVENTO.encerraEm).getTime();
 
-let db = null, auth = null;
+let db = null;
 if (firebaseConfig.projectId) {
   const app = initializeApp(firebaseConfig);
   db = getFirestore(app);
-  auth = getAuth(app);
+
 } else {
   $("cfg-notice").classList.remove("hidden");
 }
@@ -567,16 +561,14 @@ function entrarPainel(){
     render();
   });
 }
-$("btn-pin").onclick = async () => {
+$("btn-pin").onclick = () => {
   show($("pin-erro"), false);
-  if (!auth) return;
-  try {
-    await signInWithEmailAndPassword(auth, $("adm-email").value.trim(), $("adm-senha").value);
-  } catch (e) { console.error(e); show($("pin-erro"), true); }
+  if ($("adm-senha").value.trim() !== SENHA_PAINEL) return show($("pin-erro"), true);
+  try { sessionStorage.setItem("rsvp-painel", "1"); } catch {}
+  if (db) entrarPainel();
 };
 $("adm-senha").addEventListener("keydown", e => { if (e.key === "Enter") $("btn-pin").click(); });
-if (auth) onAuthStateChanged(auth, (u) => { if (u && location.hash === "#painel") entrarPainel(); });
-$("btn-sair").onclick = async () => { await signOut(auth); location.reload(); };
+$("btn-sair").onclick = () => { try { sessionStorage.removeItem("rsvp-painel"); } catch {} location.reload(); };
 
 /* exceções: filhos maiores de 18 */
 let excDoc = null;
@@ -599,7 +591,7 @@ $("form-exc").addEventListener("submit", async (e) => {
   try {
     await updateDoc(doc(db, COL, excDoc.id), { filhosExcecao: arrayUnion({ nome, idade }) });
     $("dlg-exc").close();
-  } catch (e2) { console.error(e2); err("Não foi possível salvar. Confira se você entrou com o e-mail do RH."); }
+  } catch (e2) { console.error(e2); err("Não foi possível salvar. Verifique a internet e tente de novo."); }
 });
 async function removerExcecao(d, f){
   if (!confirm(`Remover ${f.nome} da lista de exceções?`)) return;
@@ -681,7 +673,8 @@ $("btn-csv").onclick = () => {
   a.click();
 };
 
-if (location.hash === "#painel") abrirPainel();
+let jaLogado = false; try { jaLogado = sessionStorage.getItem("rsvp-painel") === "1"; } catch {}
+if (location.hash === "#painel") { abrirPainel(); if (jaLogado && db) entrarPainel(); }
 else if (ENCERRADO) {
   show($("view-form"), false); show($("view-done"), false); show($("view-fechado"), true);
   $("ev-prazo").textContent = "Confirmações encerradas";
