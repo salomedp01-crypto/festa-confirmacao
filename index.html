@@ -144,6 +144,16 @@ input:focus-visible,button:focus-visible{outline:3px solid var(--gold);outline-o
 .frase{font-family:"Bricolage Grotesque",Georgia,serif;font-weight:500;font-size:1.25rem;line-height:1.35;
   margin:0 auto 1.2rem;max-width:26rem;color:var(--ink)}
 .frase::before{content:"";display:block;width:2.4rem;height:4px;border-radius:2px;background:var(--gold);margin:0 auto .9rem}
+dialog{border:0;border-radius:18px;padding:1.4rem 1.3rem;width:min(92vw,420px);background:var(--surface);color:var(--ink);
+  box-shadow:0 24px 60px -20px rgba(5,15,50,.6)}
+dialog::backdrop{background:rgba(8,17,42,.55)}
+dialog h3{font-family:"Bricolage Grotesque",Georgia,serif;font-weight:800;font-size:1.25rem;margin:0 0 .3rem}
+.dlg-acts{display:flex;gap:.5rem;justify-content:flex-end}
+.exc-line{display:flex;align-items:center;gap:.4rem;margin-top:.25rem}
+.exc-tag{font-size:.75rem;font-weight:800;background:var(--gold-soft);color:var(--ink);border-radius:5px;padding:0 .35rem}
+.mini{font:inherit;font-size:.85rem;font-weight:700;border:1.5px dashed var(--brand);color:var(--brand);background:transparent;
+  border-radius:8px;padding:.2rem .5rem;cursor:pointer;margin-top:.4rem}
+.mini-x{border:0;background:transparent;color:var(--muted);cursor:pointer;font-size:1.05rem;padding:0 .25rem}
 .link{background:none;border:0;color:var(--ink);font:inherit;font-weight:700;text-decoration:underline;cursor:pointer;padding:.4rem}
 
 .stats{display:grid;grid-template-columns:repeat(2,1fr);gap:.6rem;margin-bottom:1.2rem}
@@ -269,6 +279,20 @@ body{padding-bottom:0}
     </form>
   </section>
 
+  <dialog id="dlg-exc">
+    <form method="dialog" id="form-exc">
+      <h3>Filho maior de 18 (exceção)</h3>
+      <p class="small" id="exc-de"></p>
+      <div class="q"><label for="exc-nome">Nome do filho(a)</label><input type="text" id="exc-nome" maxlength="80"></div>
+      <div class="q"><label for="exc-idade">Idade</label><input type="number" id="exc-idade" min="18" max="99" inputmode="numeric"></div>
+      <p class="error hidden" id="exc-erro" role="alert"></p>
+      <div class="dlg-acts">
+        <button type="button" class="ghost" id="exc-cancelar">Cancelar</button>
+        <button type="submit" class="primary" id="exc-salvar" style="width:auto;padding:.7rem 1.2rem">Adicionar</button>
+      </div>
+    </form>
+  </dialog>
+
   <!-- ================= ENCERRADO ================= -->
   <section class="card done hidden" id="view-fechado">
     <div class="mark" aria-hidden="true">🔒</div>
@@ -289,11 +313,16 @@ body{padding-bottom:0}
   <!-- ================= PAINEL (link + #painel) ================= -->
   <section class="card hidden" id="view-login">
     <h2>Painel de confirmações</h2>
+    <p class="hint" style="margin:0 0 1rem">Entre com o e-mail e a senha cadastrados no Firebase.</p>
     <div class="q">
-      <label for="pin">Senha do painel</label>
-      <input type="text" id="pin" inputmode="numeric" autocomplete="off">
+      <label for="adm-email">E-mail</label>
+      <input type="text" id="adm-email" inputmode="email" autocomplete="username">
     </div>
-    <p class="error hidden" id="pin-erro" role="alert">Senha incorreta.</p>
+    <div class="q">
+      <label for="adm-senha">Senha</label>
+      <input type="password" id="adm-senha" autocomplete="current-password" style="width:100%;font:inherit;color:var(--ink);background:var(--field);border:1.5px solid var(--line);border-radius:12px;padding:.8rem .9rem">
+    </div>
+    <p class="error hidden" id="pin-erro" role="alert">E-mail ou senha incorretos.</p>
     <button class="primary" id="btn-pin">Entrar</button>
   </section>
 
@@ -303,8 +332,9 @@ body{padding-bottom:0}
       <div class="stat"><b id="s-func">0</b><span>funcionários confirmados</span></div>
       <div class="stat"><b id="s-conj">0</b><span>cônjuges / namorados(as)</span></div>
       <div class="stat"><b id="s-filhos">0</b><span>filhos (até 18 anos)</span></div>
+      <div class="stat"><b id="s-exc">0</b><span>filhos maiores de 18 (exceção)</span></div>
       <div class="stat"><b id="s-nao">0</b><span>não vão</span></div>
-      <div class="stat total"><b id="s-total">0</b><span>pessoas no total (funcionários + acompanhantes + filhos)</span></div>
+      <div class="stat total"><b id="s-total">0</b><span>pessoas no total (funcionários + acompanhantes + filhos + exceções)</span></div>
     </div>
     <div class="toolbar">
       <input type="text" id="busca" placeholder="Buscar nome">
@@ -321,6 +351,7 @@ body{padding-bottom:0}
     <p class="small" id="vazio" style="text-align:center;margin-top:1rem">Ainda não chegou nenhuma resposta. Mande o link no grupo para começar.</p>
     <div class="toolbar" style="margin-top:1.2rem">
       <button class="ghost" id="btn-csv">Baixar planilha (CSV)</button>
+      <button class="ghost" id="btn-sair">Sair do painel</button>
     </div>
   </section>
 
@@ -344,8 +375,7 @@ const EVENTO = {
   fraseFinal: "Sua presença torna essa comemoração ainda mais especial. Esperamos você e sua família!"
 };
 
-/* Senha simples para abrir o painel (link + #painel) */
-const PIN_PAINEL = "2026";
+/* O painel (link + #painel) usa login do Firebase Authentication */
 
 /* =========================================================
    2) FIREBASE — cole a configuração do seu projeto
@@ -362,7 +392,9 @@ const firebaseConfig = {
 
 /* ========================================================= */
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-import { getFirestore, doc, setDoc, getDoc, collection, onSnapshot, serverTimestamp }
+import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut }
+  from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+import { getFirestore, doc, setDoc, getDoc, updateDoc, collection, onSnapshot, serverTimestamp, arrayUnion, arrayRemove }
   from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
 const $ = (id) => document.getElementById(id);
@@ -379,9 +411,11 @@ document.title = EVENTO.titulo + " · Confirmação de presença";
 
 const ENCERRADO = Date.now() >= new Date(EVENTO.encerraEm).getTime();
 
-let db = null;
+let db = null, auth = null;
 if (firebaseConfig.projectId) {
-  db = getFirestore(initializeApp(firebaseConfig));
+  const app = initializeApp(firebaseConfig);
+  db = getFirestore(app);
+  auth = getAuth(app);
 } else {
   $("cfg-notice").classList.remove("hidden");
 }
@@ -463,7 +497,7 @@ $("rsvp").addEventListener("submit", async (e) => {
   $("btn-enviar").disabled = true;
   $("btn-enviar").textContent = "Enviando…";
   try {
-    await setDoc(doc(db, COL, slug(nome)), dados);
+    await setDoc(doc(db, COL, slug(nome)), dados, { merge: true });
     try { localStorage.setItem("rsvp-nome", nome); } catch {}
     mostrarSucesso(dados);
   } catch (err) {
@@ -487,6 +521,7 @@ function mostrarSucesso(d){
   add(`${d.nome}: ${vai ? "vai" : "não vai"}`);
   if (d.conjuge) add(`Acompanhante: ${d.conjuge}`);
   d.filhos.forEach(f => add(`Filho(a): ${f.nome}, ${f.idade} ${f.idade === 1 ? "ano" : "anos"}`));
+  if (vai) (d.filhosExcecao || []).forEach(f => add(`Filho(a): ${f.nome}, ${f.idade} anos (autorizado pelo RH)`));
   show(ul, true);
   $("done-frase").textContent = EVENTO.fraseFinal || "";
   show($("done-frase"), vai && !!EVENTO.fraseFinal);
@@ -523,26 +558,66 @@ function abrirPainel(){
   show($("view-form"), false); show($("view-done"), false);
   show($("view-login"), true);
 }
-$("btn-pin").onclick = () => {
-  if ($("pin").value.trim() !== PIN_PAINEL) return show($("pin-erro"), true);
+let unsub = null;
+function entrarPainel(){
   show($("view-login"), false); show($("view-painel"), true);
-  if (!db) return;
-  onSnapshot(collection(db, COL), (snap) => {
-    todos = snap.docs.map(d => d.data()).sort((a, b) => a.nome.localeCompare(b.nome, "pt-BR"));
+  if (unsub) return;
+  unsub = onSnapshot(collection(db, COL), (snap) => {
+    todos = snap.docs.map(d => ({ id: d.id, ...d.data() })).sort((a, b) => a.nome.localeCompare(b.nome, "pt-BR"));
     render();
   });
+}
+$("btn-pin").onclick = async () => {
+  show($("pin-erro"), false);
+  if (!auth) return;
+  try {
+    await signInWithEmailAndPassword(auth, $("adm-email").value.trim(), $("adm-senha").value);
+  } catch (e) { console.error(e); show($("pin-erro"), true); }
 };
-$("pin").addEventListener("keydown", e => { if (e.key === "Enter") $("btn-pin").click(); });
+$("adm-senha").addEventListener("keydown", e => { if (e.key === "Enter") $("btn-pin").click(); });
+if (auth) onAuthStateChanged(auth, (u) => { if (u && location.hash === "#painel") entrarPainel(); });
+$("btn-sair").onclick = async () => { await signOut(auth); location.reload(); };
+
+/* exceções: filhos maiores de 18 */
+let excDoc = null;
+function abrirExcecao(d){
+  excDoc = d;
+  $("exc-de").textContent = "Colaborador(a): " + d.nome;
+  $("exc-nome").value = ""; $("exc-idade").value = "";
+  show($("exc-erro"), false);
+  $("dlg-exc").showModal();
+  $("exc-nome").focus();
+}
+$("exc-cancelar").onclick = () => $("dlg-exc").close();
+$("form-exc").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const nome = $("exc-nome").value.trim();
+  const idade = Number($("exc-idade").value);
+  const err = (m) => { $("exc-erro").textContent = m; show($("exc-erro"), true); };
+  if (!nome) return err("Escreva o nome.");
+  if (!Number.isInteger(idade) || idade < 18 || idade > 99) return err("Informe a idade (18 anos ou mais).");
+  try {
+    await updateDoc(doc(db, COL, excDoc.id), { filhosExcecao: arrayUnion({ nome, idade }) });
+    $("dlg-exc").close();
+  } catch (e2) { console.error(e2); err("Não foi possível salvar. Confira se você entrou com o e-mail do RH."); }
+});
+async function removerExcecao(d, f){
+  if (!confirm(`Remover ${f.nome} da lista de exceções?`)) return;
+  try { await updateDoc(doc(db, COL, d.id), { filhosExcecao: arrayRemove(f) }); }
+  catch (e) { console.error(e); alert("Não foi possível remover."); }
+}
 
 function render(){
   const sim = todos.filter(d => d.vai === "sim");
   const conj = sim.filter(d => d.conjuge).length;
   const filhos = sim.reduce((n, d) => n + (d.filhos?.length || 0), 0);
+  const exc = sim.reduce((n, d) => n + (d.filhosExcecao?.length || 0), 0);
   $("s-func").textContent = sim.length;
   $("s-conj").textContent = conj;
   $("s-filhos").textContent = filhos;
+  $("s-exc").textContent = exc;
   $("s-nao").textContent = todos.length - sim.length;
-  $("s-total").textContent = sim.length + conj + filhos;
+  $("s-total").textContent = sim.length + conj + filhos + exc;
 
   const q = slug($("busca").value);
   const lista = todos.filter(d => (filtro === "todos" || d.vai === filtro) && (!q || slug(d.nome).includes(q)));
@@ -558,8 +633,23 @@ function render(){
     const partes = [];
     if (d.conjuge) partes.push(`Cônjuge/namorado(a): ${d.conjuge}`);
     (d.filhos || []).forEach(f => partes.push(`Filho(a): ${f.nome} (${f.idade})`));
-    tdA.textContent = partes.join(" · ") || "—";
-    if (!partes.length) tdA.className = "small";
+    const txt = document.createElement("div");
+    txt.textContent = partes.join(" · ") || "—";
+    if (!partes.length) txt.className = "small";
+    tdA.appendChild(txt);
+    if (d.vai === "sim") {
+      (d.filhosExcecao || []).forEach(f => {
+        const l = document.createElement("div"); l.className = "exc-line";
+        const t = document.createElement("span"); t.className = "exc-tag"; t.textContent = "EXCEÇÃO";
+        const n = document.createElement("span"); n.textContent = `Filho(a): ${f.nome} (${f.idade})`;
+        const x = document.createElement("button"); x.className = "mini-x"; x.textContent = "×";
+        x.setAttribute("aria-label", "Remover exceção"); x.onclick = () => removerExcecao(d, f);
+        l.append(t, n, x); tdA.appendChild(l);
+      });
+      const b = document.createElement("button"); b.className = "mini";
+      b.textContent = "+ Filho maior de 18"; b.onclick = () => abrirExcecao(d);
+      tdA.appendChild(b);
+    }
     tr.append(tdN, tdV, tdA); tb.appendChild(tr);
   });
   show($("vazio"), !todos.length);
@@ -572,14 +662,16 @@ document.querySelectorAll("[data-f]").forEach(b => b.onclick = () => {
 });
 
 $("btn-csv").onclick = () => {
-  const linhas = [["Nome","Vai","Cônjuge/namorado(a)","Qtd filhos","Filhos (nome e idade)","Total de pessoas"]];
+  const linhas = [["Nome","Vai","Cônjuge/namorado(a)","Qtd filhos","Filhos (nome e idade)","Filhos maiores de 18 (exceção)","Total de pessoas"]];
   todos.forEach(d => {
     const vai = d.vai === "sim";
     const nf = d.filhos?.length || 0;
+    const ne = vai ? (d.filhosExcecao?.length || 0) : 0;
     linhas.push([
       d.nome, vai ? "Sim" : "Não", d.conjuge || "", nf,
       (d.filhos || []).map(f => `${f.nome} (${f.idade})`).join("; "),
-      vai ? 1 + (d.conjuge ? 1 : 0) + nf : 0
+      vai ? (d.filhosExcecao || []).map(f => `${f.nome} (${f.idade})`).join("; ") : "",
+      vai ? 1 + (d.conjuge ? 1 : 0) + nf + ne : 0
     ]);
   });
   const csv = "\uFEFF" + linhas.map(l => l.map(c => `"${String(c).replace(/"/g, '""')}"`).join(";")).join("\r\n");
