@@ -654,17 +654,26 @@ document.querySelectorAll("[data-f]").forEach(b => b.onclick = () => {
 });
 
 $("btn-csv").onclick = () => {
-  const linhas = [["Nome","Vai","Cônjuge/namorado(a)","Qtd filhos","Filhos (nome e idade)","Filhos maiores de 18 (exceção)","Total de pessoas"]];
+  // filhos (até 18) e exceções, cada um com nome e idade em colunas separadas
+  const lista = (d) => d.filhos || [];
+  const excs = (d) => d.vai === "sim" ? (d.filhosExcecao || []) : [];
+  const maxF = Math.max(0, ...todos.map(d => lista(d).length));
+  const maxE = Math.max(0, ...todos.map(d => excs(d).length));
+  const cab = ["Nome","Vai","Cônjuge/namorado(a)","Qtd filhos"];
+  for (let i = 1; i <= maxF; i++) cab.push(`Filho ${i} - nome`, `Filho ${i} - idade`);
+  cab.push("Qtd filhos maiores de 18 (exceção)");
+  for (let i = 1; i <= maxE; i++) cab.push(`Exceção ${i} - nome`, `Exceção ${i} - idade`);
+  cab.push("Total de pessoas");
+  const linhas = [cab];
   todos.forEach(d => {
     const vai = d.vai === "sim";
-    const nf = d.filhos?.length || 0;
-    const ne = vai ? (d.filhosExcecao?.length || 0) : 0;
-    linhas.push([
-      d.nome, vai ? "Sim" : "Não", d.conjuge || "", nf,
-      (d.filhos || []).map(f => `${f.nome} (${f.idade})`).join("; "),
-      vai ? (d.filhosExcecao || []).map(f => `${f.nome} (${f.idade})`).join("; ") : "",
-      vai ? 1 + (d.conjuge ? 1 : 0) + nf + ne : 0
-    ]);
+    const f = lista(d), x = excs(d);
+    const l = [d.nome, vai ? "Sim" : "Não", d.conjuge || "", f.length];
+    for (let i = 0; i < maxF; i++) l.push(f[i]?.nome || "", f[i] ? f[i].idade : "");
+    l.push(x.length);
+    for (let i = 0; i < maxE; i++) l.push(x[i]?.nome || "", x[i] ? x[i].idade : "");
+    l.push(vai ? 1 + (d.conjuge ? 1 : 0) + f.length + x.length : 0);
+    linhas.push(l);
   });
   const csv = "\uFEFF" + linhas.map(l => l.map(c => `"${String(c).replace(/"/g, '""')}"`).join(";")).join("\r\n");
   const a = document.createElement("a");
