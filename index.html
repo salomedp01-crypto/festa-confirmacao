@@ -154,6 +154,11 @@ dialog h3{font-family:"Bricolage Grotesque",Georgia,serif;font-weight:800;font-s
 .mini{font:inherit;font-size:.85rem;font-weight:700;border:1.5px dashed var(--brand);color:var(--brand);background:transparent;
   border-radius:8px;padding:.2rem .5rem;cursor:pointer;margin-top:.4rem}
 .mini-x{border:0;background:transparent;color:var(--muted);cursor:pointer;font-size:1.05rem;padding:0 .25rem}
+.sec{font-family:"Bricolage Grotesque",Georgia,serif;font-weight:800;font-size:1.1rem;margin:0 0 .6rem}
+.faixas{display:grid;grid-template-columns:repeat(auto-fit,minmax(7rem,1fr));gap:.6rem;margin-bottom:1.4rem}
+.faixa{background:var(--gold-soft);border-radius:14px;padding:.8rem}
+.faixa b{display:block;font-family:"Bricolage Grotesque",Georgia,serif;font-size:1.8rem;line-height:1}
+.faixa span{font-size:.88rem;color:var(--ink)}
 .link{background:none;border:0;color:var(--ink);font:inherit;font-weight:700;text-decoration:underline;cursor:pointer;padding:.4rem}
 
 .stats{display:grid;grid-template-columns:repeat(2,1fr);gap:.6rem;margin-bottom:1.2rem}
@@ -329,8 +334,12 @@ body{padding-bottom:0}
       <div class="stat"><b id="s-filhos">0</b><span>filhos (até 18 anos)</span></div>
       <div class="stat"><b id="s-exc">0</b><span>filhos maiores de 18 (exceção)</span></div>
       <div class="stat"><b id="s-nao">0</b><span>não vão</span></div>
+      <div class="stat"><b id="s-adultos">0</b><span>adultos (funcionários, cônjuges e exceções)</span></div>
+      <div class="stat"><b id="s-criancas">0</b><span>crianças e adolescentes (até 18 anos)</span></div>
       <div class="stat total"><b id="s-total">0</b><span>pessoas no total (funcionários + acompanhantes + filhos + exceções)</span></div>
     </div>
+    <h3 class="sec">Crianças por idade</h3>
+    <div class="faixas" id="faixas"></div>
     <div class="toolbar">
       <input type="text" id="busca" placeholder="Buscar nome">
       <button class="ghost on" data-f="todos">Todos</button>
@@ -369,6 +378,13 @@ const EVENTO = {
   // Frase que aparece depois que a pessoa confirma presença
   fraseFinal: "Sua presença torna essa comemoração ainda mais especial. Esperamos você e sua família!"
 };
+
+/* Faixas de idade das crianças no painel (pode ajustar conforme o buffet) */
+const FAIXAS = [
+  { de: 0,  ate: 5,  nome: "0 a 5 anos" },
+  { de: 6,  ate: 12, nome: "6 a 12 anos" },
+  { de: 13, ate: 18, nome: "13 a 18 anos" }
+];
 
 /* Senha do painel (link + #painel) */
 const SENHA_PAINEL = "2026";
@@ -610,6 +626,17 @@ function render(){
   $("s-exc").textContent = exc;
   $("s-nao").textContent = todos.length - sim.length;
   $("s-total").textContent = sim.length + conj + filhos + exc;
+  $("s-adultos").textContent = sim.length + conj + exc;
+  $("s-criancas").textContent = filhos;
+  const idades = sim.flatMap(d => (d.filhos || []).map(f => Number(f.idade)));
+  const fx = $("faixas"); fx.innerHTML = "";
+  FAIXAS.forEach(F => {
+    const n = idades.filter(i => i >= F.de && i <= F.ate).length;
+    const box = document.createElement("div"); box.className = "faixa";
+    const b = document.createElement("b"); b.textContent = n;
+    const s = document.createElement("span"); s.textContent = F.nome;
+    box.append(b, s); fx.appendChild(box);
+  });
 
   const q = slug($("busca").value);
   const lista = todos.filter(d => (filtro === "todos" || d.vai === filtro) && (!q || slug(d.nome).includes(q)));
