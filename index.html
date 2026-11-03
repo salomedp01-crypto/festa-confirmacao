@@ -354,7 +354,7 @@ body{padding-bottom:0}
     </div>
     <p class="small" id="vazio" style="text-align:center;margin-top:1rem">Ainda não chegou nenhuma resposta. Mande o link no grupo para começar.</p>
     <div class="toolbar" style="margin-top:1.2rem">
-      <button class="ghost" id="btn-csv">Baixar planilha (CSV)</button>
+      <button class="ghost" id="btn-csv">Baixar planilha (Excel)</button>
       <button class="ghost" id="btn-sair">Sair do painel</button>
     </div>
   </section>
@@ -680,34 +680,172 @@ document.querySelectorAll("[data-f]").forEach(b => b.onclick = () => {
   render();
 });
 
-$("btn-csv").onclick = () => {
-  // filhos (até 18) e exceções, cada um com nome e idade em colunas separadas
-  const lista = (d) => d.filhos || [];
-  const excs = (d) => d.vai === "sim" ? (d.filhosExcecao || []) : [];
-  const maxF = Math.max(0, ...todos.map(d => lista(d).length));
-  const maxE = Math.max(0, ...todos.map(d => excs(d).length));
-  const cab = ["Nome","Vai","Cônjuge/namorado(a)","Qtd filhos"];
-  for (let i = 1; i <= maxF; i++) cab.push(`Filho ${i} - nome`, `Filho ${i} - idade`);
-  cab.push("Qtd filhos maiores de 18 (exceção)");
-  for (let i = 1; i <= maxE; i++) cab.push(`Exceção ${i} - nome`, `Exceção ${i} - idade`);
-  cab.push("Total de pessoas");
-  const linhas = [cab];
-  todos.forEach(d => {
-    const vai = d.vai === "sim";
-    const f = lista(d), x = excs(d);
-    const l = [d.nome, vai ? "Sim" : "Não", d.conjuge || "", f.length];
-    for (let i = 0; i < maxF; i++) l.push(f[i]?.nome || "", f[i] ? f[i].idade : "");
-    l.push(x.length);
-    for (let i = 0; i < maxE; i++) l.push(x[i]?.nome || "", x[i] ? x[i].idade : "");
-    l.push(vai ? 1 + (d.conjuge ? 1 : 0) + f.length + x.length : 0);
-    linhas.push(l);
+function carregarExcelJS(){
+  if (window.ExcelJS) return Promise.resolve();
+  return new Promise((ok, falha) => {
+    const s = document.createElement("script");
+    s.src = "https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.4.0/exceljs.min.js";
+    s.onload = ok; s.onerror = falha; document.head.appendChild(s);
   });
-  const csv = "\uFEFF" + linhas.map(l => l.map(c => `"${String(c).replace(/"/g, '""')}"`).join(";")).join("\r\n");
-  const a = document.createElement("a");
-  a.href = URL.createObjectURL(new Blob([csv], { type: "text/csv;charset=utf-8" }));
-  a.download = "confirmacoes-festa.csv";
-  a.click();
+}
+
+$("btn-csv").onclick = async () => {
+  const btn = $("btn-csv"); const txt = btn.textContent;
+  btn.disabled = true; btn.textContent = "Gerando planilha…";
+  try { await carregarExcelJS(); await gerarPlanilha(); }
+  catch (e) { console.error(e); alert("Não foi possível gerar a planilha. Verifique a internet e tente de novo."); }
+  finally { btn.disabled = false; btn.textContent = txt; }
 };
+
+async function gerarPlanilha(){
+  const NAVY = "FF10245E", BLUE = "FF1B3FA0", ZEBRA = "FFF2F4F8", GOLD = "FFFFE9A8", WHITE = "FFFFFFFF";
+  const borda = { style: "thin", color: { argb: "FFD9DEEA" } };
+  const bordas = { top: borda, left: borda, bottom: borda, right: borda };
+  const fill = (c) => ({ type: "pattern", pattern: "solid", fgColor: { argb: c } });
+  const hoje = new Date().toLocaleString("pt-BR", { dateStyle: "short", timeStyle: "short" });
+
+  const sim = todos.filter(d => d.vai === "sim");
+  const conj = sim.filter(d => d.conjuge).length;
+  const filhos = sim.reduce((n, d) => n + (d.filhos?.length || 0), 0);
+  const exc = sim.reduce((n, d) => n + (d.filhosExcecao?.length || 0), 0);
+  const idades = sim.flatMap(d => (d.filhos || []).map(f => Number(f.idade)));
+  const faixaDe = (i) => (FAIXAS.find(F => i >= F.de && i <= F.ate) || {}).nome || "";
+
+  const wb = new ExcelJS.Workbook();
+  wb.creator = "Festa de fim de ano";
+
+  // título padrão de cada aba
+  function titulo(ws, texto, colunas){
+    ws.mergeCells(1, 1, 1, colunas);
+    const c = ws.getCell(1, 1);
+    c.value = texto; c.font = { bold: true, size: 15, color: { argb: WHITE } };
+    c.fill = fill(NAVY); c.alignment = { vertical: "middle", horizontal: "left", indent: 1 };
+    ws.getRow(1).height = 30;
+    ws.mergeCells(2, 1, 2, colunas);
+    const s = ws.getCell(2, 1);
+    s.value = `${EVENTO.data} · ${EVENTO.horario} · ${EVENTO.local}   |   Gerado em ${hoje}`;
+    s.font = { italic: true, size: 10, color: { argb: "FF5A6683" } };
+    s.alignment = { indent: 1 };
+    ws.getRow(2).height = 20;
+  }
+  function cabecalho(row){
+    row.eachCell(c => {
+      c.font = { bold: true, color: { argb: WHITE } }; c.fill = fill(BLUE);
+      c.alignment = { horizontal: "center", vertical: "middle", wrapText: true }; c.border = bordas;
+    });
+    row.height = 30;
+  }
+  function corpo(row, i){
+    row.eachCell({ includeEmpty: true }, c => {
+      c.border = bordas; c.alignment = { vertical: "middle", wrapText: true, ...(c.alignment || {}) };
+      if (i % 2) c.fill = fill(ZEBRA);
+    });
+  }
+  function totalRow(row){
+    row.eachCell({ includeEmpty: true }, c => { c.font = { bold: true }; c.fill = fill(GOLD); c.border = bordas; });
+  }
+
+  /* ---------- Aba 1: Resumo ---------- */
+  const r = wb.addWorksheet("Resumo", { views: [{ showGridLines: false }] });
+  r.columns = [{ width: 48 }, { width: 16 }];
+  titulo(r, "Festa de fim de ano · Resumo das confirmações", 2);
+  let linha = 4;
+  const bloco = (nome, itens, total) => {
+    const h = r.getRow(linha++); h.values = [nome, "Quantidade"]; cabecalho(h);
+    itens.forEach(([k, v], i) => {
+      const row = r.getRow(linha++); row.values = [k, v];
+      row.getCell(2).alignment = { horizontal: "center" }; corpo(row, i);
+    });
+    if (total) {
+      const t = r.getRow(linha++); t.values = total;
+      t.getCell(2).alignment = { horizontal: "center" }; totalRow(t);
+    }
+    linha++;
+  };
+  bloco("Confirmações", [
+    ["Funcionários confirmados", sim.length],
+    ["Cônjuges / namorados(as)", conj],
+    ["Filhos (até 18 anos)", filhos],
+    ["Filhos maiores de 18 (exceção)", exc],
+    ["Não vão", todos.length - sim.length]
+  ]);
+  bloco("Adultos e crianças", [
+    ["Adultos (funcionários, cônjuges e exceções)", sim.length + conj + exc],
+    ["Crianças e adolescentes (até 18 anos)", filhos]
+  ], ["Total de pessoas", sim.length + conj + filhos + exc]);
+  bloco("Crianças por idade",
+    FAIXAS.map(F => [F.nome, idades.filter(i => i >= F.de && i <= F.ate).length]),
+    ["Total de crianças", filhos]);
+
+  /* ---------- Aba 2: Confirmações ---------- */
+  const maxF = Math.max(0, ...sim.map(d => (d.filhos || []).length));
+  const maxE = Math.max(0, ...sim.map(d => (d.filhosExcecao || []).length));
+  const cab = ["Funcionário", "Vai?", "Cônjuge / namorado(a)", "Qtd filhos"];
+  const larg = [34, 9, 30, 10];
+  for (let i = 1; i <= maxF; i++) { cab.push(`Filho ${i} - nome`, `Filho ${i} - idade`); larg.push(28, 9); }
+  cab.push("Qtd exceção"); larg.push(10);
+  for (let i = 1; i <= maxE; i++) { cab.push(`Exceção ${i} - nome`, `Exceção ${i} - idade`); larg.push(28, 9); }
+  cab.push("Total de pessoas"); larg.push(11);
+  const nCol = cab.length;
+  const centro = new Set([2, 4, nCol]);
+  for (let i = 0; i < maxF; i++) centro.add(6 + i * 2);
+  centro.add(5 + maxF * 2);
+  for (let i = 0; i < maxE; i++) centro.add(7 + maxF * 2 + i * 2);
+
+  const c = wb.addWorksheet("Confirmações", { views: [{ state: "frozen", xSplit: 1, ySplit: 3, showGridLines: false }] });
+  c.columns = larg.map(w => ({ width: w }));
+  titulo(c, "Festa de fim de ano · Confirmações", nCol);
+  const hc = c.getRow(3); hc.values = cab; cabecalho(hc);
+  const ordem = [...sim, ...todos.filter(d => d.vai !== "sim")];
+  ordem.forEach((d, i) => {
+    const vai = d.vai === "sim";
+    const f = d.filhos || [], x = vai ? (d.filhosExcecao || []) : [];
+    const l = [d.nome, vai ? "Sim" : "Não", d.conjuge || "", f.length];
+    for (let j = 0; j < maxF; j++) l.push(f[j]?.nome || "", f[j] ? Number(f[j].idade) : "");
+    l.push(x.length);
+    for (let j = 0; j < maxE; j++) l.push(x[j]?.nome || "", x[j] ? Number(x[j].idade) : "");
+    l.push(vai ? 1 + (d.conjuge ? 1 : 0) + f.length + x.length : 0);
+    const row = c.addRow(l);
+    centro.forEach(n => row.getCell(n).alignment = { horizontal: "center" });
+    corpo(row, i);
+    if (!vai) row.getCell(2).font = { bold: true, color: { argb: "FFC4261D" } };
+  });
+  const tot = new Array(nCol).fill("");
+  tot[0] = "TOTAL"; tot[1] = sim.length; tot[2] = conj; tot[3] = filhos;
+  tot[4 + maxF * 2] = exc; tot[nCol - 1] = sim.length + conj + filhos + exc;
+  const tc = c.addRow(tot);
+  centro.forEach(n => tc.getCell(n).alignment = { horizontal: "center" });
+  tc.getCell(3).alignment = { horizontal: "center" };
+  totalRow(tc);
+
+  /* ---------- Aba 3: Crianças ---------- */
+  const k = wb.addWorksheet("Crianças", { views: [{ state: "frozen", ySplit: 3, showGridLines: false }] });
+  k.columns = [{ width: 34 }, { width: 34 }, { width: 9 }, { width: 18 }, { width: 14 }];
+  titulo(k, "Festa de fim de ano · Filhos por idade", 5);
+  const hk = k.getRow(3);
+  hk.values = ["Filho(a)", "Funcionário(a)", "Idade", "Faixa", "Observação"];
+  cabecalho(hk);
+  const kids = sim.flatMap(d => [
+    ...(d.filhos || []).map(f => ({ nome: f.nome, pai: d.nome, idade: Number(f.idade), faixa: faixaDe(Number(f.idade)), obs: "" })),
+    ...(d.filhosExcecao || []).map(f => ({ nome: f.nome, pai: d.nome, idade: Number(f.idade), faixa: "Maior de 18", obs: "Exceção" }))
+  ]).sort((a, b) => a.idade - b.idade || a.nome.localeCompare(b.nome, "pt-BR"));
+  kids.forEach((x, i) => {
+    const row = k.addRow([x.nome, x.pai, x.idade, x.faixa, x.obs]);
+    [3, 4, 5].forEach(n => row.getCell(n).alignment = { horizontal: "center" });
+    corpo(row, i);
+  });
+  const tk = k.addRow([`TOTAL: ${kids.length} (${filhos} até 18 anos + ${exc} exceção)`, "", "", "", ""]);
+  totalRow(tk);
+
+  [r, c, k].forEach(ws => ws.pageSetup = { orientation: ws === c ? "landscape" : "portrait", fitToPage: true, fitToWidth: 1, fitToHeight: 0, paperSize: 9 });
+
+  const buf = await wb.xlsx.writeBuffer();
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(new Blob([buf], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" }));
+  a.download = "confirmacoes-festa.xlsx";
+  a.click();
+}
+
 
 let jaLogado = false; try { jaLogado = sessionStorage.getItem("rsvp-painel") === "1"; } catch {}
 if (location.hash === "#painel") { abrirPainel(); if (jaLogado && db) entrarPainel(); }
