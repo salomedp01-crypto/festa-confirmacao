@@ -302,7 +302,7 @@ body{padding-bottom:0}
   <section class="card done hidden" id="view-fechado">
     <div class="mark" aria-hidden="true">🔒</div>
     <h2>Confirmações encerradas</h2>
-    <p>O prazo para confirmar presença terminou em 30 de outubro. Se precisar de ajuda, fale com o RH.</p>
+    <p>O prazo para confirmar presença terminou em 6 de novembro. Se precisar de ajuda, fale com o RH.</p>
   </section>
 
   <!-- ================= SUCESSO ================= -->
@@ -372,9 +372,9 @@ const EVENTO = {
   data:    "Sábado, 12 de dezembro",          // ex.: "Sábado, 12 de dezembro"
   horario: "Das 13h às 20h",          // ex.: "A partir das 19h"
   local:   "Chácara Oasis",          // ex.: "Sítio X, Itaúna"
-  prazo:   "Confirme até 30 de outubro",
+  prazo:   "Confirme até 6 de novembro",
   // Depois deste momento o formulário fecha (horário de Brasília)
-  encerraEm: "2026-10-31T00:00:00-03:00",
+  encerraEm: "2026-11-07T00:00:00-03:00",
   // Frase que aparece depois que a pessoa confirma presença
   fraseFinal: "Sua presença torna essa comemoração ainda mais especial. Esperamos você e sua família!"
 };
@@ -502,7 +502,7 @@ $("rsvp").addEventListener("submit", async (e) => {
     }
   }
 
-  if (Date.now() >= new Date(EVENTO.encerraEm).getTime()) return erro("O prazo para confirmar terminou em 30 de outubro.");
+  if (Date.now() >= new Date(EVENTO.encerraEm).getTime()) return erro("O prazo para confirmar terminou em 6 de novembro.");
   if (!db) return erro("O formulário ainda não está ligado ao banco de dados. Avise o RH.");
   $("btn-enviar").disabled = true;
   $("btn-enviar").textContent = "Enviando…";
