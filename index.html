@@ -159,6 +159,12 @@ dialog h3{font-family:"Bricolage Grotesque",Georgia,serif;font-weight:800;font-s
 .faixa{background:var(--gold-soft);border-radius:14px;padding:.8rem}
 .faixa b{display:block;font-family:"Bricolage Grotesque",Georgia,serif;font-size:1.8rem;line-height:1}
 .faixa span{font-size:.88rem;color:var(--ink)}
+.acoes{display:flex;gap:.3rem;margin-top:.35rem;flex-wrap:wrap}
+.acoes button{font:inherit;font-size:.8rem;font-weight:700;background:transparent;border:1.5px solid var(--line);
+  color:var(--ink);border-radius:7px;padding:.1rem .5rem;cursor:pointer}
+.acoes .del{color:var(--no);border-color:var(--no-soft)}
+.rh-tag{display:inline-block;font-size:.7rem;font-weight:800;background:var(--field);color:var(--muted);border-radius:5px;padding:0 .3rem;margin-left:.3rem}
+dialog{max-height:90vh;overflow:auto}
 .link{background:none;border:0;color:var(--ink);font:inherit;font-weight:700;text-decoration:underline;cursor:pointer;padding:.4rem}
 
 .stats{display:grid;grid-template-columns:repeat(2,1fr);gap:.6rem;margin-bottom:1.2rem}
@@ -284,6 +290,34 @@ body{padding-bottom:0}
     </form>
   </section>
 
+  <dialog id="dlg-pessoa">
+    <form method="dialog" id="form-pessoa">
+      <h3 id="pes-titulo">Adicionar pessoa</h3>
+      <p class="small" style="margin:0 0 1rem">Lançado pelo RH. Não depende do prazo de confirmação.</p>
+      <div class="q"><label for="pes-nome">Nome do funcionário(a)</label><input type="text" id="pes-nome" maxlength="100"></div>
+      <div class="q">
+        <span class="lbl">Vai à festa?</span>
+        <div class="choice">
+          <input type="radio" name="pes-vai" id="pes-vai-s" value="sim"><label for="pes-vai-s">Vai</label>
+          <input type="radio" name="pes-vai" id="pes-vai-n" value="nao"><label for="pes-vai-n">Não vai</label>
+        </div>
+      </div>
+      <div id="pes-bloco">
+        <div class="q"><label for="pes-conj">Cônjuge / namorado(a) <span class="small">(deixe vazio se não levar)</span></label><input type="text" id="pes-conj" maxlength="100"></div>
+        <div class="q">
+          <span class="lbl">Filhos até 18 anos</span>
+          <div id="pes-kids"></div>
+          <button type="button" class="add" id="pes-add-kid">+ Adicionar filho</button>
+        </div>
+      </div>
+      <p class="error hidden" id="pes-erro" role="alert"></p>
+      <div class="dlg-acts">
+        <button type="button" class="ghost" id="pes-cancelar">Cancelar</button>
+        <button type="submit" class="primary" id="pes-salvar" style="width:auto;padding:.7rem 1.2rem">Salvar</button>
+      </div>
+    </form>
+  </dialog>
+
   <dialog id="dlg-exc">
     <form method="dialog" id="form-exc">
       <h3>Filho maior de 18 (exceção)</h3>
@@ -338,6 +372,7 @@ body{padding-bottom:0}
       <div class="stat"><b id="s-criancas">0</b><span>crianças e adolescentes (até 18 anos)</span></div>
       <div class="stat total"><b id="s-total">0</b><span>pessoas no total (funcionários + acompanhantes + filhos + exceções)</span></div>
     </div>
+    <button class="primary" id="btn-novo" style="margin-bottom:1.4rem">+ Adicionar pessoa à lista</button>
     <h3 class="sec">Crianças por idade</h3>
     <div class="faixas" id="faixas"></div>
     <div class="toolbar">
@@ -404,7 +439,7 @@ const firebaseConfig = {
 
 /* ========================================================= */
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-import { getFirestore, doc, setDoc, getDoc, updateDoc, collection, onSnapshot, serverTimestamp, arrayUnion, arrayRemove }
+import { getFirestore, doc, setDoc, getDoc, updateDoc, deleteDoc, collection, onSnapshot, serverTimestamp, arrayUnion, arrayRemove }
   from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
 const $ = (id) => document.getElementById(id);
@@ -609,6 +644,66 @@ $("form-exc").addEventListener("submit", async (e) => {
     $("dlg-exc").close();
   } catch (e2) { console.error(e2); err("Não foi possível salvar. Verifique a internet e tente de novo."); }
 });
+/* adicionar / editar / excluir pessoas (RH) */
+let pesDoc = null;
+function radioPes(){ return (document.querySelector('input[name="pes-vai"]:checked') || {}).value || ""; }
+function syncPes(){ show($("pes-bloco"), radioPes() === "sim"); }
+document.querySelectorAll('input[name="pes-vai"]').forEach(r => r.addEventListener("change", syncPes));
+function addKidPes(nome = "", idade = ""){
+  const row = document.createElement("div"); row.className = "kid";
+  row.innerHTML = `<input type="text" placeholder="Nome" maxlength="80" aria-label="Nome do filho">
+    <input type="number" placeholder="Idade" min="0" max="18" inputmode="numeric" aria-label="Idade">
+    <button type="button" aria-label="Remover">×</button>`;
+  row.children[0].value = nome; row.children[1].value = idade;
+  row.children[2].onclick = () => row.remove();
+  $("pes-kids").appendChild(row);
+}
+$("pes-add-kid").onclick = () => addKidPes();
+function abrirPessoa(d){
+  pesDoc = d || null;
+  $("pes-titulo").textContent = d ? "Editar pessoa" : "Adicionar pessoa";
+  $("pes-nome").value = d ? d.nome : "";
+  document.querySelectorAll('input[name="pes-vai"]').forEach(r => r.checked = r.value === (d ? d.vai : "sim"));
+  $("pes-conj").value = d?.conjuge || "";
+  $("pes-kids").innerHTML = "";
+  (d?.filhos || []).forEach(f => addKidPes(f.nome, f.idade));
+  show($("pes-erro"), false); syncPes();
+  $("dlg-pessoa").showModal(); $("pes-nome").focus();
+}
+$("btn-novo").onclick = () => abrirPessoa(null);
+$("pes-cancelar").onclick = () => $("dlg-pessoa").close();
+$("form-pessoa").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const err = (m) => { $("pes-erro").textContent = m; show($("pes-erro"), true); };
+  const nome = $("pes-nome").value.trim().replace(/\s+/g, " ");
+  const vai = radioPes();
+  if (nome.split(" ").length < 2) return err("Escreva nome e sobrenome.");
+  if (!vai) return err("Marque se vai ou não.");
+  const dados = { nome, vai, conjuge: "", filhos: [], porRH: true, atualizadoEm: serverTimestamp() };
+  if (vai === "sim") {
+    dados.conjuge = $("pes-conj").value.trim();
+    for (const row of $("pes-kids").children) {
+      const n = row.children[0].value.trim(), i = row.children[1].value;
+      if (!n && i === "") continue;
+      const idade = Number(i);
+      if (!n || i === "" || !Number.isInteger(idade) || idade < 0 || idade > 18)
+        return err("Preencha nome e idade de cada filho (até 18 anos). Maiores de 18 entram como exceção.");
+      dados.filhos.push({ nome: n, idade });
+    }
+  }
+  const id = pesDoc ? pesDoc.id : slug(nome);
+  if (!pesDoc && todos.some(t => t.id === id)) return err("Essa pessoa já está na lista. Use o botão Editar.");
+  try {
+    await setDoc(doc(db, COL, id), dados, { merge: true });
+    $("dlg-pessoa").close();
+  } catch (e2) { console.error(e2); err("Não foi possível salvar. Confira se as regras novas do Firebase foram publicadas."); }
+});
+async function excluirPessoa(d){
+  if (!confirm(`Excluir ${d.nome} da lista da festa?\n\nIsso apaga também acompanhante e filhos dessa pessoa e não pode ser desfeito.`)) return;
+  try { await deleteDoc(doc(db, COL, d.id)); }
+  catch (e) { console.error(e); alert("Não foi possível excluir. Confira se as regras novas do Firebase foram publicadas."); }
+}
+
 async function removerExcecao(d, f){
   if (!confirm(`Remover ${f.nome} da lista de exceções?`)) return;
   try { await updateDoc(doc(db, COL, d.id), { filhosExcecao: arrayRemove(f) }); }
@@ -643,7 +738,13 @@ function render(){
   const tb = $("lista"); tb.innerHTML = "";
   lista.forEach(d => {
     const tr = document.createElement("tr");
-    const tdN = document.createElement("td"); tdN.textContent = d.nome;
+    const tdN = document.createElement("td");
+    const nm = document.createElement("div"); nm.textContent = d.nome;
+    if (d.porRH) { const t = document.createElement("span"); t.className = "rh-tag"; t.textContent = "RH"; nm.appendChild(t); }
+    const ac = document.createElement("div"); ac.className = "acoes";
+    const be = document.createElement("button"); be.textContent = "Editar"; be.onclick = () => abrirPessoa(d);
+    const bx = document.createElement("button"); bx.textContent = "Excluir"; bx.className = "del"; bx.onclick = () => excluirPessoa(d);
+    ac.append(be, bx); tdN.append(nm, ac);
     const tdV = document.createElement("td");
     const tag = document.createElement("span");
     tag.className = "tag " + d.vai; tag.textContent = d.vai === "sim" ? "Vai" : "Não vai";
